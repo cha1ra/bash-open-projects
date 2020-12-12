@@ -4,15 +4,13 @@
 # INIT
 ####################################
 
-
-echo "hello"
-
-
 # 設定ファイルの読み込み
 . `dirname $0`/.env
 
-# DEV_DIRECTORY="~/dev"
-# CODE_EDITOR="pstorm"
+dir_name=$DEV_DIRECTORY
+input_char="X"
+input_name=""
+index_num="" # インデックス取得
 
 
 ####################################
@@ -20,22 +18,19 @@ echo "hello"
 ####################################
 
 function open_dev_directory () {
-  echo "[Info] Please choose the directory..."
+  echo "[Info] Please choose directory..."
   # 配列の中身を全て取り出すには ${HOGE[@]}
-  DIR_NAME=($(ls $DEV_DIRECTORY))
-  select VAR in ${DIR_NAME[@]}
+  select VAR in ${DEV_DIRECTORY[@]}
   do
-    echo $VAR
-    echo "Wait to open $DEV_DIRECTORY/$VAR in Code Editor."
-    echo "$CODE_EDITOR $DEV_DIRECTORY/$VAR"
-    $CODE_EDITOR $DEV_DIRECTORY/$VAR
+    dir_name=$VAR
     break
   done
 }
 
 function pick_candidate_projects () {
+  echo "Open ${dir_name} ..."
   projects=()
-  for path in $DEV_DIRECTORY/*; do
+  for path in $dir_name/*; do
     if [ -d $path ]; then # if diretory
       project_name=$(basename $path)
       if [ -z "$1" ] || [[ $project_name == "$1"* ]]; then #$1は引数, -z はnull判定
@@ -43,8 +38,6 @@ function pick_candidate_projects () {
       fi
     fi
   done
-
-  # echo ${projects[@]/%/$'\n'} | column
 
   i=0
   for project in ${projects[@]}; do
@@ -58,6 +51,7 @@ function pick_candidate_projects () {
     fi
     let i++
   done | column -t
+
 }
 
 
@@ -65,24 +59,17 @@ function pick_candidate_projects () {
 # コードの本体
 ##################################
 
-# if [ $# -ge 1 ]; then
-#   case "$1" in
-#     "open" | "o") open_dev_directory ;;
-#     "exec" | "e") exec_project ;;
-#     "stop" | "s") stop_project ;;
-#     "where" | "w") echo `dirname $0`;;
-#   esac
-# else
-#   echo -e "[Warning]Please set command\npgln open"
-# fi
-
+if [ $# -ge 1 ]; then
+  case "$1" in
+    "-d" | "--directory")
+      open_dev_directory
+      ;;
+    "-w" | "where") echo `dirname $0`;;
+  esac
+fi
 
 clear
 pick_candidate_projects
-
-input_char="X"
-input_name=""
-index_num="" # インデックス取得
 
 while [ ! "$input_char" = "" ]
 do
@@ -99,8 +86,9 @@ do
 
   case $input_char in
     "") # enter
-      $CODE_EDITOR $DEV_DIRECTORY/${projects[index_num]}
-      break ;;
+      $CODE_EDITOR $dir_name/${projects[index_num]}
+      break
+      ;;
     $'\x7f\x0a') 
       echo "親";; # backspace hexdump で調べる
     [0-9])
